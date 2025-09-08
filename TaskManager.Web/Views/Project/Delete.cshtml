@@ -1,0 +1,22 @@
+﻿@model TaskManager.Projects.Dtos.ProjectDto
+
+@{
+    ViewData["Title"] = "Delete Project";
+}
+
+<h1>Delete Project</h1>
+
+<h3>Are you sure you want to delete this project?</h3>
+
+<div>
+    <h4>@Model.Name</h4>
+    <p>@Model.Description</p>
+    <p>Start Date: @Model.StartDate.ToString("yyyy-MM-dd")</p>
+    <p>End Date: @(Model.EndDate.HasValue? Model.EndDate.Value.ToString("yyyy-MM-dd") : "-")</p>
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>

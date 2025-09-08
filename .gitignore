@@ -1,0 +1,48 @@
+﻿## Build results
+bin/
+obj/
+out/
+Debug/
+Release/
+
+## User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## VS Code
+.vscode/
+
+## Visual Studio
+.vs/
+*.dbmdl
+*.jfm
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+*.nuspec
+
+## Entity Framework / Migrations temp
+*.ide
+*.sql
+
+## Logs & Temp
+*.log
+*.tlog
+*.tmp
+*.bak
+
+## OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+## Env files
+*.env
+.env.*
+
+## Rider (nếu có dùng JetBrains Rider IDE)
+.idea/

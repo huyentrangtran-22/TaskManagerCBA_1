@@ -1,0 +1,94 @@
+﻿@using System.Text.Json
+@using Newtonsoft.Json
+@model ProjectReportViewModel
+
+@{
+    ViewData["Title"] = "Dashboard Công Việc";
+}
+
+<div class="container py-5">
+    <h2 class="text-center mb-4">📊 Báo Cáo Công Việc</h2>
+
+    <!-- Thẻ báo cáo nhanh -->
+    <div class="row text-center mb-5">
+        <div class="col-md-6">
+            <div class="card shadow-sm report-card completed">
+                <div class="card-body">
+                    <h5 class="card-title">✅ Hoàn thành</h5>
+                    <p class="card-text fs-4">@Model.Completed công việc</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm report-card in-progress">
+                <div class="card-body">
+                    <h5 class="card-title">🕒 Đang làm</h5>
+                    <p class="card-text fs-4">@Model.InProgress công việc</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Biểu đồ tròn -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-6">
+            <canvas id="pieChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Biểu đồ cột tiến độ dự án -->
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h4 class="text-center mb-3">📈 Tiến độ các dự án</h4>
+            <canvas id="barChart"></canvas>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Pie Chart
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Hoàn thành', 'Đang làm'],
+                datasets: [{
+                    data: [@Model.Completed, @Model.InProgress],
+                    backgroundColor: ['#198754', '#ffc107'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Bar Chart (tiến độ dự án)
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(JsonConvert.SerializeObject(Model.ProjectNames ?? new List<string>())),
+                datasets: [{
+                    label: 'Tiến độ (%)',
+                    data: @Html.Raw(JsonConvert.SerializeObject(Model.ProgressValues ?? new List<int>())),
+                    backgroundColor: '#0d6efd'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20 }
+                    }
+                }
+            }
+        });
+    </script>
+}

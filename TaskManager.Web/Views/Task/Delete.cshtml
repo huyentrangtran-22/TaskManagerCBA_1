@@ -1,0 +1,17 @@
+﻿@model TaskManager.Tasks.Dtos.TaskDto
+
+@{
+    ViewData["Title"] = "Xóa nhiệm vụ";
+}
+
+<h2 class="text-danger fw-bold">🗑️ Xác nhận xóa nhiệm vụ</h2>
+
+<div class="alert alert-warning mt-3">
+    Bạn có chắc chắn muốn xóa nhiệm vụ <strong>@Model.Name</strong> không?
+</div>
+
+<form asp-action="DeleteConfirmed" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">✅ Xóa</button>
+    <a asp-action="Index" class="btn btn-secondary">⬅️ Quay lại</a>
+</form>

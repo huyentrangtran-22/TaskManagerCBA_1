@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TaskManager.Identity\TaskManager.Identity.csproj" />
+    <ProjectReference Include="..\TaskManager.Notifications\TaskManager.Notifications.csproj" />
+    <ProjectReference Include="..\TaskManager.Projects\TaskManager.Projects.csproj" />
+    <ProjectReference Include="..\TaskManager.Shared\TaskManager.Shared.csproj" />
+    <ProjectReference Include="..\TaskManager.Tasks\TaskManager.Tasks.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNet.Identity.AspNetCoreCompat" Version="0.3.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.8" />
+  </ItemGroup>
+
+</Project>

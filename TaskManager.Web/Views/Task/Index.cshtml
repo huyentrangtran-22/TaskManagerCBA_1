@@ -1,0 +1,117 @@
+﻿@model IEnumerable<TaskManager.Tasks.Dtos.TaskDto>
+@using MyStatus = TaskManager.Shared.Entities.TaskStatus
+
+@{
+    ViewData["Title"] = "Bảng công việc";
+    var statuses = new[] {
+        MyStatus.InProgress,
+        MyStatus.Completed,
+    };
+}
+<h1 style="color:#e83e8c;" class="mb-4 fw-bold text-center">📋 My Tasks</h1>
+
+<div class="kanban-wrapper overflow-auto px-3">
+    <div class="kanban-board d-flex flex-wrap justify-content-center gap-4">
+        @foreach (var status in statuses)
+        {
+            <div class="kanban-column bg-light border rounded shadow-sm p-3" style="width: 400px; min-height: 500px;">
+                <h5 class="text-center text-uppercase fw-bold mb-3">
+                    @(status == MyStatus.Completed ? "✅ Completed" : "🚧 In Progress")
+                </h5>
+
+                @foreach (var task in Model.Where(t => t.Status == status))
+                {
+                    <div class="kanban-card bg-white p-3 mb-3 rounded shadow-sm border-start border-primary border-4" data-task-id="@task.Id">
+                        <a asp-action="Details" asp-route-id="@task.Id" class="text-decoration-none text-dark d-block">
+                            <strong>@task.Name</strong><br />
+                            <small class="text-muted">@task.Description</small><br />
+                            <span class="badge bg-secondary mt-1">
+                                @(string.IsNullOrWhiteSpace(task.AssignedUserId) ? "Chưa phân công" : task.AssignedUserId)
+                            </span>
+                        </a>
+
+                        <div class="mt-2 d-flex justify-content-end gap-2">
+                            <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-sm btn-warning">✏️</a>
+                            <button type="button"
+                                    class="btn btn-sm btn-danger delete-task-btn"
+                                    data-task-id="@task.Id"
+                                    data-task-name="@task.Name"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#confirmDeleteModal">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                <a asp-action="Create" asp-route-status="@status" class="btn btn-sm btn-outline-primary w-100 mt-2">
+                    ➕ Thêm thẻ
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal xác nhận xóa -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteLabel">Xác nhận xóa nhiệm vụ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa nhiệm vụ <strong id="taskNameToDelete"></strong> không?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Đồng ý xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Token xác thực -->
+<form method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+        let selectedTaskId = null;
+        let selectedCard = null;
+
+        document.querySelectorAll('.delete-task-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                selectedTaskId = this.getAttribute('data-task-id');
+                selectedCard = document.querySelector(`.kanban-card[data-task-id='${selectedTaskId}']`);
+                const taskName = this.getAttribute('data-task-name');
+                document.getElementById('taskNameToDelete').textContent = taskName;
+            });
+        });
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+            if (!selectedTaskId || !selectedCard) return;
+
+            fetch(`/Task/DeleteConfirmed/${selectedTaskId}`, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    selectedCard.remove();
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal'));
+                    modal.hide();
+                } else {
+                    alert('Không thể xóa nhiệm vụ.');
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi khi xóa:', error);
+                alert('Đã xảy ra lỗi.');
+            });
+        });
+    </script>
+}
