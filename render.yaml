@@ -5,6 +5,6 @@ services:
     plan: free
     region: singapore
     branch: master
-    rootDir: TaskManager.Web
+    rootDir: .
     dockerfilePath: ./TaskManager.Web/Dockerfile
     healthCheckPath: "/"
