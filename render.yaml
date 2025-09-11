@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: taskmanager-cba
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: master
+    rootDir: TaskManager.Web
+    dockerfilePath: ./TaskManager.Web/Dockerfile
+    healthCheckPath: "/"
