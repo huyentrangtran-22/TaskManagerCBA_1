@@ -10,6 +10,7 @@ namespace TaskManager.Tasks.Dtos
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string? AssignedUserId { get; set; }
+        public string? AssignedUserName { get; set; } = "Chưa phân công"; // 👈 Thêm dòng này
         public Shared.Entities.TaskStatus Status { get; set; }
         public int ProjectId { get; set; }
         public Project? Project { get; set; } 
@@ -35,7 +36,7 @@ namespace TaskManager.Tasks.Dtos
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }
 
-        public string AssignedUserId { get; set; }
+        public string? AssignedUserId { get; set; }
         public Shared.Entities.TaskStatus Status { get; set; }
 
         public int ProjectId { get; set; } // ✅ để liên kết với Project
@@ -49,6 +50,7 @@ namespace TaskManager.Tasks.Dtos
         public string? Description { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public int? ProjectId { get; set; }
         public string? AssignedUserId { get; set; }
         public Shared.Entities.TaskStatus Status { get; set; } 
     }

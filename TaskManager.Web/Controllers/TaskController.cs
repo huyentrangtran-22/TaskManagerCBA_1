@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using TaskManager.Application.Services;
 using TaskManager.Projects.Interfaces;
+using TaskManager.Shared.Data;
+using TaskManager.Shared.Entities;
 using TaskManager.Tasks.Dtos;
 using TaskManager.Tasks.Services;
-using TaskManager.Shared.Entities;
 
 namespace TaskManager.Web.Controllers
 {
@@ -14,11 +16,13 @@ namespace TaskManager.Web.Controllers
     {
         private readonly ITaskService _taskService;
         private readonly IProjectService _projectService;
+        private readonly AppDbContext _context;
 
-        public TaskController(ITaskService taskService, IProjectService projectService)
+        public TaskController(ITaskService taskService, IProjectService projectService, AppDbContext context)
         {
             _taskService = taskService;
             _projectService = projectService;
+            _context = context;
         }
 
         // GET: /Task
@@ -42,12 +46,21 @@ namespace TaskManager.Web.Controllers
         {
             await LoadProjectsAsync();
 
+            // 👉 Lấy ProjectId mặc định (nếu chưa có)
+            var defaultProjectId = await _context.Projects
+                .Select(p => p.Id)
+                .FirstOrDefaultAsync();
+
+            await LoadProjectMembersAsync(defaultProjectId);
+
             var dto = new TaskCreateDto
             {
-                Status = status ?? Shared.Entities.TaskStatus.InProgress
+                Status = status ?? Shared.Entities.TaskStatus.InProgress,
+                ProjectId = defaultProjectId // 👈 Gán vào DTO để giữ giá trị
             };
 
             return View(dto);
+
         }
 
 
@@ -59,6 +72,7 @@ namespace TaskManager.Web.Controllers
             if (!ModelState.IsValid)
             {
                 await LoadProjectsAsync();
+                await LoadProjectMembersAsync(taskDto.ProjectId); // 👈 Load đúng thành viên theo dự án đã chọn
                 return View(taskDto);
             }
 
@@ -68,10 +82,12 @@ namespace TaskManager.Web.Controllers
             {
                 ModelState.AddModelError(string.Empty, "Không thể tạo nhiệm vụ");
                 await LoadProjectsAsync();
+                await LoadProjectMembersAsync(taskDto.ProjectId);
                 return View(taskDto);
             }
 
             return RedirectToAction(nameof(Index));
+
         }
 
         // GET: /Task/Edit/5
@@ -88,10 +104,16 @@ namespace TaskManager.Web.Controllers
                 StartDate = task.StartDate,
                 EndDate = task.EndDate,
                 AssignedUserId = task.AssignedUserId,
-                Status = task.Status
+                Status = task.Status,
+                ProjectId = task.ProjectId // 👈 cần có để load members
             };
 
             await LoadProjectsAsync();
+            if (dto.ProjectId > 0) // 👈 kiểm tra có project
+            {
+                await LoadProjectMembersAsync(dto.ProjectId.Value);
+            }
+
             return View(dto);
         }
 
@@ -105,6 +127,10 @@ namespace TaskManager.Web.Controllers
             if (!ModelState.IsValid)
             {
                 await LoadProjectsAsync();
+                if (taskDto.ProjectId > 0)
+                {
+                    await LoadProjectMembersAsync(taskDto.ProjectId.Value);
+                }
                 return View(taskDto);
             }
 
@@ -114,11 +140,16 @@ namespace TaskManager.Web.Controllers
             {
                 ModelState.AddModelError(string.Empty, "Không thể cập nhật nhiệm vụ");
                 await LoadProjectsAsync();
+                if (taskDto.ProjectId > 0)
+                {
+                    await LoadProjectMembersAsync(taskDto.ProjectId.Value);
+                }
                 return View(taskDto);
             }
 
             return RedirectToAction(nameof(Index));
         }
+
 
         // GET: /Task/Delete/5
         public async Task<IActionResult> Delete(int id)
@@ -130,16 +161,24 @@ namespace TaskManager.Web.Controllers
         }
 
         // POST: /Task/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var success = await _taskService.DeleteAsync(id);
+            try
+            {
+                var success = await _taskService.DeleteAsync(id);
 
-            if (!success)
-                return BadRequest("Không thể xóa nhiệm vụ.");
+                if (!success)
+                    return BadRequest("Không thể xóa nhiệm vụ. Có thể do dữ liệu liên quan chưa được cấu hình xóa tự động.");
 
-            return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Không thể xóa nhiệm vụ. Chi tiết: {ex.Message}");
+            }
+
         }
 
         // 🔧 Helper để load danh sách project
@@ -148,5 +187,20 @@ namespace TaskManager.Web.Controllers
             var projects = await _projectService.GetAllAsync();
             ViewBag.ProjectList = new SelectList(projects, "Id", "Name");
         }
+        private async Task LoadProjectMembersAsync(int projectId)
+        {
+            var members = await _context.ProjectMembers
+            .Where(pm => pm.ProjectId == projectId)
+            .Include(pm => pm.User)
+            .Select(pm => new
+            {
+                UserId = pm.UserId, // 👈 viết hoa đúng
+                UserName = pm.User.UserName ?? "Không rõ" // 👈 xử lý null
+            })
+            .ToListAsync();
+
+                ViewBag.ProjectMembers = new SelectList(members, "UserId", "UserName");
+        }
+
     }
 }

@@ -14,9 +14,10 @@ namespace TaskManager.Shared.Entities
         [Required]
         public string Message { get; set; } = null!;
 
-        // Có thể liên kết tới task hoặc project (tuỳ dùng)
-        public Guid? TaskId { get; set; }
-        public Guid? ProjectId { get; set; }
+        //Có thể liên kết tới task hoặc project(tuỳ dùng)
+        public int TaskId { get; set; }
+        public int ProjectId { get; set; }
+        public TaskItem TaskItem { get; set; } = null!;
 
         public bool IsRead { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

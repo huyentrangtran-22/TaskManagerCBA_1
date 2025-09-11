@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Collections;
 using TaskManager.Identity.Entities;
 using TaskManager.Projects.Dtos;
+using TaskManager.Projects.DTOs;
 using TaskManager.Projects.Interfaces;
 using TaskManager.Shared.Data;
 using TaskManager.Shared.Dtos;
@@ -307,5 +309,23 @@ namespace TaskManager.Projects.Services
                 };
             }).ToList();
         }
+
+        public async Task<IEnumerable> GetProjectMembersAsync(int projectId)
+        {
+            var members = await _context.ProjectMembers
+            .Where(pm => pm.ProjectId == projectId)
+            .Include(pm => pm.User)
+            .ToListAsync(); // lấy danh sách tất cả user trong project
+
+            var result = members.Select(pm => new ProjectMemberDto
+            {
+                UserId = pm.UserId,
+                UserName = pm.User?.UserName ?? "Không rõ"
+            }).ToList();
+
+            return result;
+
+        }
+
     }
 }

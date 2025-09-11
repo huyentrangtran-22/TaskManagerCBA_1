@@ -7,7 +7,7 @@ namespace TaskManager.Application.Services
 {
     public interface ITaskService
     {
-        Task<IEnumerable<TaskDto>> GetAllAsync();
+        Task<List<TaskDto>> GetAllAsync();
         Task<TaskDto?> GetByIdAsync(int id);
         Task<TaskDto?> CreateAsync(TaskCreateDto dto);
         Task<TaskDto?> UpdateAsync(int id, TaskUpdateDto dto);

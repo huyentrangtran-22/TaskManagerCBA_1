@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using TaskManager.Identity.Entities;
+using TaskManager.Shared.Data;
 
 namespace TaskManager.Shared.Entities
 {
@@ -17,5 +19,9 @@ namespace TaskManager.Shared.Entities
 
         // Navigation
         public Project? Project { get; set; }
+
+         //✅ Navigation đến bảng người dùng
+        //public AppDbContext? User { get; set; }
+        public ApplicationUser? User { get; set; }
     }
 }

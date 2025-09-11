@@ -25,10 +25,17 @@ namespace TaskManager.Shared.Data
 
             // Project - ProjectMember one-to-many
             modelBuilder.Entity<ProjectMember>()
-                .HasOne(pm => pm.Project)
-                .WithMany(p => p.Members)
-                .HasForeignKey(pm => pm.ProjectId)
+                .HasOne(pm => pm.User)
+                .WithMany()
+                .HasForeignKey(pm => pm.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Notification>()
+                .HasOne(n => n.TaskItem)
+                .WithMany() // hoặc .WithMany(t => t.Notifications) nếu có
+                .HasForeignKey(n => n.TaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+
 
             // ✅ Project - TaskItem one-to-many (cấu hình rõ ràng, không lặp)
             modelBuilder.Entity<TaskItem>()

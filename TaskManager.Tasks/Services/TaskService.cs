@@ -5,6 +5,7 @@ using TaskManager.Shared.Data;
 using TaskManager.Shared.Dtos;
 using TaskManager.Shared.Entities;
 using TaskManager.Tasks.Dtos;
+using SharedTaskStatus = TaskManager.Shared.Entities.TaskStatus;
 
 namespace TaskManager.Tasks.Services
 {
@@ -20,29 +21,20 @@ namespace TaskManager.Tasks.Services
         }
 
 
-        public async Task<IEnumerable<TaskDto>> GetAllAsync()
-        {
-            return await _context.TaskItems
-                .Select(t => new TaskDto
-                {
-                    Id = t.Id,
-                    Name = t.Title,
-                    Description = t.Description,
-                    StartDate = t.StartDate,
-                    EndDate = t.EndDate,
-                    AssignedUserId = string.IsNullOrWhiteSpace(t.AssignedUserId) ? "Chưa phân công" : t.AssignedUserId,
-                    Status = (Shared.Entities.TaskStatus)t.Status,
-                    ProjectId = t.ProjectId
-                })
-                .ToListAsync();
-        }
-
         public async Task<TaskDto?> GetByIdAsync(int id)
         {
-            var task = await EntityFrameworkQueryableExtensions
-                .Include(_context.TaskItems, t => t.Project) // ✅ Include entity Project
+            var task = await _context.TaskItems
+                .Include(t => t.Project)
                 .FirstOrDefaultAsync(t => t.Id == id);
+
             if (task == null) return null;
+
+            var userName = task.AssignedUserId != null
+                ? await _context.Users
+                    .Where(u => u.Id == task.AssignedUserId)
+                    .Select(u => u.UserName)
+                    .FirstOrDefaultAsync()
+                : "Chưa phân công";
 
             return new TaskDto
             {
@@ -51,13 +43,13 @@ namespace TaskManager.Tasks.Services
                 Description = task.Description,
                 StartDate = task.StartDate,
                 EndDate = task.EndDate,
-                AssignedUserId = string.IsNullOrWhiteSpace(task.AssignedUserId) ? "Chưa phân công" : task.AssignedUserId,
-                Status = (Shared.Entities.TaskStatus)task.Status,
+                AssignedUserId = task.AssignedUserId,
+                AssignedUserName = userName ?? "Không rõ",
+                Status = (SharedTaskStatus)task.Status,
                 ProjectId = task.ProjectId,
-                Project = task.Project // ✅ Gán entity Project
+                Project = task.Project
             };
         }
-
         public async Task<TaskDto?> CreateAsync(TaskCreateDto dto)
         {
             var projectExists = await _context.Projects.AnyAsync(p => p.Id == dto.ProjectId);
@@ -127,15 +119,25 @@ namespace TaskManager.Tasks.Services
         public async Task<bool> DeleteAsync(int id)
         {
             var task = await _context.TaskItems.FindAsync(id);
-            if (task == null) return false;
+            if (task == null)
+            {
+                Console.WriteLine($"Không tìm thấy task với ID: {id}");
+                return false;
+            }
 
-            _context.TaskItems.Remove(task);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.TaskItems.Remove(task);
+                await _context.SaveChangesAsync();
 
-            // ✅ Kiểm tra và cập nhật trạng thái dự án
-            await _projectService.UpdateProjectStatusIfCompletedAsync(task.ProjectId);
-
-            return true;
+                await _projectService.UpdateProjectStatusIfCompletedAsync(task.ProjectId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi khi xóa task: {ex.Message}");
+                return false;
+            }
         }
 
         public async Task<bool> AssignUserAsync(int taskId, string userId)
@@ -143,9 +145,19 @@ namespace TaskManager.Tasks.Services
             var task = await _context.TaskItems.FindAsync(taskId);
             if (task == null) return false;
 
+            // ✅ Kiểm tra xem userId có phải là thành viên của dự án không
+            var isMember = await _context.ProjectMembers
+                .AnyAsync(pm => pm.ProjectId == task.ProjectId && pm.UserId == userId);
+
+            if (!isMember)
+            {
+                throw new Exception("Người dùng không thuộc dự án này, không thể phân công.");
+            }
+
             task.AssignedUserId = string.IsNullOrWhiteSpace(userId) ? null : userId;
             await _context.SaveChangesAsync();
             return true;
+
         }
 
         public async Task<TaskReportDto> GetTaskReportAsync()
@@ -162,6 +174,42 @@ namespace TaskManager.Tasks.Services
                 InProgress = inProgressCount
             };
 
+        }
+
+        public async Task<List<TaskDto>> GetAllAsync()
+        {
+            // Truy vấn tất cả user và đưa vào dictionary để tra nhanh
+            var userDict = await _context.Users
+                .ToDictionaryAsync(u => u.Id, u => u.UserName);
+
+            // Truy vấn tất cả task kèm theo thông tin project
+            var tasks = await _context.TaskItems
+                .Include(t => t.Project)
+                .ToListAsync();
+
+            // Ánh xạ sang DTO
+            var result = tasks.Select(task =>
+            {
+                var userName = task.AssignedUserId != null && userDict.TryGetValue(task.AssignedUserId, out var name)
+                    ? name
+                    : "Chưa phân công";
+
+                return new TaskDto
+                {
+                    Id = task.Id,
+                    Name = task.Title,
+                    Description = task.Description,
+                    StartDate = task.StartDate,
+                    EndDate = task.EndDate,
+                    AssignedUserId = task.AssignedUserId,
+                    AssignedUserName = string.IsNullOrWhiteSpace(userName) ? "Không rõ" : userName,
+                    Status = (SharedTaskStatus)task.Status,
+                    ProjectId = task.ProjectId,
+                    Project = task.Project
+                };
+            }).ToList();
+
+            return result;
         }
     }
 }

@@ -8,6 +8,7 @@
         MyStatus.Completed,
     };
 }
+
 <h1 style="color:#e83e8c;" class="mb-4 fw-bold text-center">📋 My Tasks</h1>
 
 <div class="kanban-wrapper overflow-auto px-3">
@@ -26,7 +27,7 @@
                             <strong>@task.Name</strong><br />
                             <small class="text-muted">@task.Description</small><br />
                             <span class="badge bg-secondary mt-1">
-                                @(string.IsNullOrWhiteSpace(task.AssignedUserId) ? "Chưa phân công" : task.AssignedUserId)
+                                @(string.IsNullOrWhiteSpace(task.AssignedUserName) ? "Chưa phân công" : task.AssignedUserName)
                             </span>
                         </a>
 
@@ -71,8 +72,8 @@
     </div>
 </div>
 
-<!-- Token xác thực -->
-<form method="post" style="display:none;">
+<!-- Form ẩn chứa token xác thực -->
+<form id="deleteTaskForm" method="post" style="display:none;">
     @Html.AntiForgeryToken()
 </form>
 
@@ -90,28 +91,30 @@
             });
         });
 
-        document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async function () {
             if (!selectedTaskId || !selectedCard) return;
 
-            fetch(`/Task/DeleteConfirmed/${selectedTaskId}`, {
-                method: 'POST',
-                headers: {
-                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                }
-            })
-            .then(response => {
+            const token = document.querySelector('#deleteTaskForm input[name="__RequestVerificationToken"]').value;
+            const formData = new FormData();
+            formData.append('__RequestVerificationToken', token);
+
+            try {
+                const response = await fetch(`/Task/DeleteConfirmed/${selectedTaskId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
                 if (response.ok) {
                     selectedCard.remove();
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal'));
-                    modal.hide();
+                    bootstrap.Modal.getInstance(document.getElementById('confirmDeleteModal')).hide();
                 } else {
-                    alert('Không thể xóa nhiệm vụ.');
+                    const errorText = await response.text();
+                    alert(`Không thể xóa nhiệm vụ.\nChi tiết: ${errorText}`);
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Lỗi khi xóa:', error);
-                alert('Đã xảy ra lỗi.');
-            });
+                alert('Đã xảy ra lỗi khi gửi yêu cầu xóa.');
+            }
         });
     </script>
 }

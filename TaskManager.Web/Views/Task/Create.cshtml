@@ -34,7 +34,9 @@
 
     <div class="mb-3">
         <label asp-for="AssignedUserId" class="form-label">Người phụ trách</label>
-        <input asp-for="AssignedUserId" class="form-control" placeholder="Nhập tên người dùng" />
+        <select asp-for="AssignedUserId" class="form-select" asp-items="ViewBag.ProjectMembers">
+            <option value="">-- Chọn người phụ trách --</option>
+        </select>
         <span asp-validation-for="AssignedUserId" class="text-danger"></span>
     </div>
 

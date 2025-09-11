@@ -1,4 +1,5 @@
-﻿using TaskManager.Projects.Dtos;
+﻿using System.Collections;
+using TaskManager.Projects.Dtos;
 using TaskManager.Shared.Dtos;
 
 namespace TaskManager.Projects.Interfaces
@@ -15,5 +16,6 @@ namespace TaskManager.Projects.Interfaces
         Task UpdateProjectStatusIfCompletedAsync(int projectId);
         Task<Shared.Dtos.ProjectReportDto> GetProjectReportAsync(int projectId);
         Task<List<ProjectProgressDto>> GetAllProjectsProgressAsync();
+        Task<IEnumerable> GetProjectMembersAsync(int projectId);
     }
 }
