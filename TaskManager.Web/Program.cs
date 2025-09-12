@@ -3,14 +3,21 @@ using Microsoft.EntityFrameworkCore;
 using TaskManager.Application.Services;
 using TaskManager.Identity.Entities;
 using TaskManager.Identity.Services;
-using TaskManager.Notifications.Services;
+
 using TaskManager.Projects.Data;
 using TaskManager.Projects.Interfaces;
 using TaskManager.Projects.Services;
 using TaskManager.Shared.Data;
 using TaskManager.Tasks.Services;
 
+using TaskManager.Notifications.Core;
+using TaskManager.Notifications.Email.Smtp;
+using TaskManager.Notifications.Templating;
+using TaskManager.Notifications.Persistence.EFCore;
+using TaskManager.Notifications.Abstractions;
+
 var builder = WebApplication.CreateBuilder(args);
+//hg
 
 //ProjectDbContext 
 // ===== Add DbContext =====
@@ -19,12 +26,21 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddDbContext<ProjectDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// DbContext dành cho Notifications (dùng lại ConnectionStrings:DefaultConnection)
+builder.Services.AddDbContext<NotificationsDbContext>(opt =>
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 
 // ===== Add Services (DI) =====
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
+
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Cấu hình SMTP + Render template (đọc từ DB Templates)
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<ITemplateRenderer, ScribanTemplateRenderer>();
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -46,6 +62,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 // ===== Add MVC =====
 builder.Services.AddControllersWithViews();
+// Đăng ký Notifications (Service + Worker nền)
+builder.Services.AddNotificationsCore(builder.Configuration);
 
 var app = builder.Build();
 
