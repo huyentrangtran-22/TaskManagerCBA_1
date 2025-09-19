@@ -8,7 +8,8 @@ namespace TaskManager.Projects.Interfaces
         Task<List<Dtos.ProjectDto>> GetAllAsync();
         Task<Dtos.ProjectDto?> GetByIdAsync(int id);
         Task<Dtos.ProjectDto> CreateAsync(ProjectCreateDto dto);
-        Task<bool> UpdateAsync(int id, ProjectUpdateDto dto);
+        //Task<Dtos.ProjectDto?> UpdateAsync(int id, ProjectUpdateDto dto);
+        Task<Dtos.ProjectDto?> UpdateAsync(int id, ProjectUpdateDto dto, CancellationToken ct = default);
         Task<bool> DeleteAsync(int id);
         Task<bool> AddMemberAsync(int projectId, string userId);
         Task<bool> RemoveMemberAsync(int projectId, string userId);

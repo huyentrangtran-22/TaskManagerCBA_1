@@ -8,7 +8,7 @@
         public DateTime? EndDate { get; set; }
 
         // 👉 Nhập danh sách username dưới dạng chuỗi
-        public string MemberUsername { get; set; } = string.Empty;
+        public string? MemberUsername { get; set; } = string.Empty;
 
         // 👉 Chuyển chuỗi thành danh sách username đã xử lý
         public List<string> MemberUsernames =>

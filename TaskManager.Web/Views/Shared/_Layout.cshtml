@@ -123,7 +123,7 @@
                                 int unreadCount = 0;
                                 if (!string.IsNullOrEmpty(userId))
                                 {
-                                    var notificationService = Context.RequestServices.GetService(typeof(TaskManager.Notifications.Services.INotificationService)) as TaskManager.Notifications.Services.INotificationService;
+                                    var notificationService = Context.RequestServices.GetService(typeof(TaskManager.Notifications.Services.IUserNotificationService)) as TaskManager.Notifications.Services.IUserNotificationService;
                                     if (notificationService != null)
                                     {
                                         unreadCount = notificationService.GetUserNotificationsAsync(userId).Result.Count(n => !n.IsRead);

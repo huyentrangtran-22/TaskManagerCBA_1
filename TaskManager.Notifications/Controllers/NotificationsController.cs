@@ -9,9 +9,9 @@ namespace TaskManager.Notifications.Controllers
     [Route("api/[controller]")]
     public class NotificationsController : ControllerBase
     {
-        private readonly INotificationService _notificationService;
+        private readonly IUserNotificationService _notificationService;
 
-        public NotificationsController(INotificationService notificationService)
+        public NotificationsController(IUserNotificationService notificationService)
         {
             _notificationService = notificationService;
         }

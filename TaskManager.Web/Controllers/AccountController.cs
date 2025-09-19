@@ -56,5 +56,15 @@ namespace TaskManager.Web.Controllers
 
             return RedirectToAction("Login");
         }
+        // POST: /Account/Logout
+        [HttpPost]
+        // Logout 
+        public async Task<IActionResult> Logout()
+        {
+            await _authService.LogoutAsync();
+            // Xoá token / cookie nếu có
+            // Example: HttpContext.Session.Remove("Token");
+            return RedirectToAction("Login");
+        }
     }
 }

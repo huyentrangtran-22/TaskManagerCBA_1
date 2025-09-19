@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using TaskManager.Projects.Dtos;
 using TaskManager.Projects.Interfaces;
+using TaskManager.Projects.Services;
+using TaskManager.Shared.Entities;
 
 namespace TaskManager.Projects.Controllers
 {
@@ -9,10 +12,19 @@ namespace TaskManager.Projects.Controllers
     public class ProjectsController : ControllerBase
     {
         private readonly IProjectService _projectService;
+        private readonly ProjectMembershipService _membership;
 
-        public ProjectsController(IProjectService projectService)
+
+
+
+
+
+        public ProjectsController(
+            IProjectService projectService,
+            ProjectMembershipService membership)
         {
             _projectService = projectService;
+            _membership = membership;
         }
 
         [HttpGet]
@@ -35,8 +47,10 @@ namespace TaskManager.Projects.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, ProjectUpdateDto dto)
         {
-            var result = await _projectService.UpdateAsync(id, dto);
-            return result ? Ok() : NotFound();
+            //var result = await _projectService.UpdateAsync(id, dto);
+            //return result ? Ok() : NotFound();
+            var updated = await _projectService.UpdateAsync(id, dto);
+            return updated is null ? NotFound() : Ok(updated);
         }
 
         [HttpDelete("{id}")]
@@ -46,12 +60,29 @@ namespace TaskManager.Projects.Controllers
             return result ? Ok() : NotFound();
         }
 
-        [HttpPost("{id}/members/{userId}")]
-        public async Task<IActionResult> AddMember(int id, string userId)
+        //[HttpPost("{id}/members/{userId}")]
+        //public async Task<IActionResult> AddMember(int id, string userId)
+        //{
+        //    var result = await _projectService.AddMemberAsync(id, userId);
+        //    return result ? Ok() : NotFound();
+        //    //var actorUserId = User.FindFirst("sub")?.Value ?? User.Identity?.Name ?? "system";
+        //    //await _membership.AddMemberAndNotifyAsync(projectId, userId, actorUserId, ct);
+        //    //return RedirectToAction("Detail", new { id = projectId });
+        //}
+
+        [HttpPost("{id:int}/members/{userId}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> AddMemberToProject(
+            [FromRoute] int id,
+            [FromRoute] string userId,
+            CancellationToken ct)
         {
-            var result = await _projectService.AddMemberAsync(id, userId);
-            return result ? Ok() : NotFound();
+            var actorUserId = User.FindFirst("sub")?.Value ?? User.Identity?.Name ?? "system";
+            await _membership.AddMemberAndNotifyAsync(id, userId, actorUserId, ct);
+            return NoContent();
         }
+
 
         [HttpDelete("{id}/members/{userId}")]
         public async Task<IActionResult> RemoveMember(int id, string userId)

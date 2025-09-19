@@ -15,6 +15,7 @@ using TaskManager.Notifications.Email.Smtp;
 using TaskManager.Notifications.Templating;
 using TaskManager.Notifications.Persistence.EFCore;
 using TaskManager.Notifications.Abstractions;
+using TaskManager.Notifications.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 //hg
@@ -36,11 +37,15 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddNotificationsCore(builder.Configuration);
+builder.Services.AddScoped<TaskManager.Notifications.Services.IUserNotificationService, NotificationTemplateAdapter>();
 
 // Cấu hình SMTP + Render template (đọc từ DB Templates)
 builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<ITemplateRenderer, ScribanTemplateRenderer>();
+builder.Services.AddScoped<ProjectMembershipService>();
+
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {

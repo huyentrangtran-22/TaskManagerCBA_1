@@ -7,6 +7,9 @@ using TaskManager.Shared.Data;
 using TaskManager.Shared.Dtos;
 using TaskManager.Shared.Entities;
 using TaskManager.Tasks.Dtos;
+using TaskManager.Projects;
+using TaskManager.Projects.Data;
+using ProjectDtoAlias = TaskManager.Projects.Dtos.ProjectDto;
 
 namespace TaskManager.Projects.Services
 {
@@ -14,11 +17,14 @@ namespace TaskManager.Projects.Services
     {
         private readonly AppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ProjectDbContext _projectsDb;
 
-        public ProjectService(AppDbContext context, UserManager<ApplicationUser> userManager)
+        public ProjectService(AppDbContext context, UserManager<ApplicationUser> userManager, ProjectDbContext projectsDb)
         {
             _context = context;
             _userManager = userManager;
+            _projectsDb = projectsDb;
+
         }
 
         public async Task<List<Dtos.ProjectDto>> GetAllAsync()
@@ -154,30 +160,27 @@ namespace TaskManager.Projects.Services
             };
         }
 
-        public async Task<bool> UpdateAsync(int id, ProjectUpdateDto dto)
+        public async Task<Dtos.ProjectDto?> UpdateAsync(int id, ProjectUpdateDto dto, CancellationToken ct = default)
         {
-            var project = await _context.Projects.FindAsync(id);
-            if (project == null) return false;
+            var project = await _projectsDb.Projects.FindAsync(id);
+            if (project == null) return null;
 
             project.Name = dto.Name;
             project.Description = dto.Description;
             project.StartDate = dto.StartDate;
             project.EndDate = dto.EndDate;
 
-            _context.Projects.Update(project);
-            await _context.SaveChangesAsync();
+            await _projectsDb.SaveChangesAsync();
 
-            if (dto.MemberUsernames != null && dto.MemberUsernames.Any(u => !string.IsNullOrWhiteSpace(u)))
+            return new ProjectDtoAlias
             {
-                var validUsernames = dto.MemberUsernames
-                    .Where(u => !string.IsNullOrWhiteSpace(u))
-                    .ToList();
-
-                await UpdateMembersAsync(id, validUsernames);
-            }
-
-            await UpdateProjectStatusIfCompletedAsync(id);
-            return true;
+                Id = project.Id,
+                Name = project.Name,
+                Description = project.Description,
+                StartDate = project.StartDate,
+                EndDate = project.EndDate,
+                MemberUsernames = project.Members?.Select(m => m.UserId).ToList() ?? new List<string>()
+            };
         }
 
         public async Task<bool> DeleteAsync(int id)
