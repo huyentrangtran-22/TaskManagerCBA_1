@@ -148,5 +148,8 @@ namespace TaskManager.Web.Controllers
             var projects = await _projectService.GetAllAsync();
             ViewBag.ProjectList = new SelectList(projects, "Id", "Name");
         }
+
+
+
     }
 }
